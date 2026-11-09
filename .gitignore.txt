@@ -1,0 +1,33 @@
+# Ignore build results
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+# Visual Studio specific files
+vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+# NuGet Packages
+*.nupkg
+**/packages/*
+!**/packages/build/
+# Test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+# Temporary files
+*.tmp
+~$*
+*~
+# IDE-specific settings (JetBrains Rider, ReSharper)
+idea/
+_ReSharper*/
+*.DotSettings.user
+# Others
+node_modules/
+*.dbmdl
+*.pfx
+*.publishsettings
