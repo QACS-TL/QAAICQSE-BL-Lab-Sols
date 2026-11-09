@@ -42,8 +42,9 @@ public sealed class UserManager
     public Dictionary<string, object?>? AuthenticateUser(string email, string password)
     {
         // VULNERABLE: SQL injection, timing attack
+        string query = $"SELECT * FROM Users WHERE Name = '{email}'";
         var hashedPassword = HashPassword(password);
-        var query = $"SELECT * FROM users WHERE email = '{email}' AND password = '{hashedPassword}'";
+        //var query = $"SELECT * FROM users WHERE email = '{email}' AND password = '{hashedPassword}'";
         using var command = _connection.CreateCommand();
         command.CommandText = query;
         using var reader = command.ExecuteReader();
