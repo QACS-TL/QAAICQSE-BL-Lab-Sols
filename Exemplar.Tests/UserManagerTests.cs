@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.Data.Sqlite;
+using Microsoft.Data.SqlClient;
 
 namespace Lab3.Exemplar.Tests;
 
@@ -84,12 +84,15 @@ public sealed class UserManagerTests : IDisposable
         var connection = GetManagerConnection(manager);
         using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                email TEXT NOT NULL,
-                password TEXT NOT NULL,
-                info TEXT
-            );
+            IF OBJECT_ID(N'dbo.users', N'U') IS NULL
+            BEGIN
+                CREATE TABLE dbo.users (
+                    id INT IDENTITY(1,1) PRIMARY KEY,
+                    email NVARCHAR(255) NOT NULL,
+                    password NVARCHAR(255) NOT NULL,
+                    info NVARCHAR(MAX) NULL
+                );
+            END;
             DELETE FROM users;
             """;
         command.ExecuteNonQuery();
@@ -100,18 +103,18 @@ public sealed class UserManagerTests : IDisposable
         GetManagerConnection(manager).Dispose();
     }
 
-    private static SqliteConnection GetManagerConnection(UserManager manager)
+    private static SqlConnection GetManagerConnection(UserManager manager)
     {
         var field = typeof(UserManager).GetField("_connection", BindingFlags.Instance | BindingFlags.NonPublic);
-        return Assert.IsType<SqliteConnection>(field?.GetValue(manager));
+        return Assert.IsType<SqlConnection>(field?.GetValue(manager));
     }
 
     private Dictionary<string, object?>? GetUserByEmail(string email)
     {
         var connection = GetManagerConnection(_manager);
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT * FROM users WHERE email = $email";
-        command.Parameters.AddWithValue("$email", email);
+        command.CommandText = "SELECT * FROM users WHERE email = @email";
+        command.Parameters.AddWithValue("@email", email);
         using var reader = command.ExecuteReader();
         if (!reader.Read())
         {

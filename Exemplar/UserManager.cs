@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.IO;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.Data.Sqlite;
+using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Lab3.Exemplar;
@@ -16,8 +15,8 @@ namespace Lab3.Exemplar;
 /// </summary>
 public sealed class UserManager
 {
-    private readonly SqliteConnection _connection;
-    private const string DatabaseFileName = "users.db";
+    private readonly SqlConnection _connection;
+    private const string DatabaseName = "Lab3Exemplar";
 
     // VULNERABLE: Hardcoded secret
     private readonly string _secretKey = "secret123secret123SECRET123SECRET123";
@@ -25,9 +24,10 @@ public sealed class UserManager
     public UserManager()
     {
         AppContext.SetSwitch("Switch.Microsoft.IdentityModel.UnsafeRelaxHmacKeySizeValidation", true);
-        var databasePath = Path.Combine(AppContext.BaseDirectory, DatabaseFileName);
-        _connection = new SqliteConnection($"Data Source={databasePath}");
+        _connection = new SqlConnection("Server=(localdb)\\MSSQLLocalDB;Database=master;Integrated Security=true;TrustServerCertificate=True;");
         _connection.Open();
+        EnsureDatabase();
+        _connection.ChangeDatabase(DatabaseName);
         EnsureSchemaAndSeedData();
     }
 
@@ -102,7 +102,7 @@ public sealed class UserManager
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
-    private static Dictionary<string, object?> ReadRow(SqliteDataReader reader)
+    private static Dictionary<string, object?> ReadRow(SqlDataReader reader)
     {
         var row = new Dictionary<string, object?>();
         for (var index = 0; index < reader.FieldCount; index++)
@@ -113,16 +113,26 @@ public sealed class UserManager
         return row;
     }
 
+    private void EnsureDatabase()
+    {
+        using var createDatabaseCommand = _connection.CreateCommand();
+        createDatabaseCommand.CommandText = $"IF DB_ID(N'{DatabaseName}') IS NULL CREATE DATABASE [{DatabaseName}]";
+        createDatabaseCommand.ExecuteNonQuery();
+    }
+
     private void EnsureSchemaAndSeedData()
     {
         using var createCommand = _connection.CreateCommand();
         createCommand.CommandText = """
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                email TEXT NOT NULL,
-                password TEXT NOT NULL,
-                info TEXT
-            );
+            IF OBJECT_ID(N'dbo.users', N'U') IS NULL
+            BEGIN
+                CREATE TABLE dbo.users (
+                    id INT IDENTITY(1,1) PRIMARY KEY,
+                    email NVARCHAR(255) NOT NULL,
+                    password NVARCHAR(255) NOT NULL,
+                    info NVARCHAR(MAX) NULL
+                );
+            END;
             """;
         createCommand.ExecuteNonQuery();
 
@@ -142,10 +152,10 @@ public sealed class UserManager
     private void SeedUser(string email, string password, string personalInfo)
     {
         using var insertCommand = _connection.CreateCommand();
-        insertCommand.CommandText = "INSERT INTO users (email, password, info) VALUES ($email, $password, $info)";
-        insertCommand.Parameters.AddWithValue("$email", email);
-        insertCommand.Parameters.AddWithValue("$password", HashPassword(password));
-        insertCommand.Parameters.AddWithValue("$info", personalInfo);
+        insertCommand.CommandText = "INSERT INTO users (email, password, info) VALUES (@email, @password, @info)";
+        insertCommand.Parameters.AddWithValue("@email", email);
+        insertCommand.Parameters.AddWithValue("@password", HashPassword(password));
+        insertCommand.Parameters.AddWithValue("@info", personalInfo);
         insertCommand.ExecuteNonQuery();
     }
 }

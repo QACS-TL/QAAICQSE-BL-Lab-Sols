@@ -15,11 +15,5 @@
     <ProjectReference Include="..\Exemplar\Lab3.Exemplar.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="users.db">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 
 </Project>
