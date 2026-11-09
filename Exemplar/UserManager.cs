@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -19,7 +21,8 @@ public sealed class UserManager
     private readonly string _secretKey = "secret123";
 
     public UserManager()
-    {
+    {       
+
         AppContext.SetSwitch("Switch.Microsoft.IdentityModel.UnsafeRelaxHmacKeySizeValidation", true);
         _connection = new SqliteConnection("Data Source=users.db");
         _connection.Open();
@@ -70,7 +73,7 @@ public sealed class UserManager
     }
 
     public Dictionary<string, object?>? GetUserData(string userId, string requestingUserId)
-    {
+    { 
         // VULNERABLE: No authorization check
         var query = $"SELECT * FROM users WHERE id = {userId}";
         using var command = _connection.CreateCommand();
