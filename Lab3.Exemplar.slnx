@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="Exemplar.Tests/Lab3.Exemplar.Tests.csproj" />
   <Project Path="Exemplar/Lab3.Exemplar.csproj" />
+  <Project Path="Lab3.Exemplar.Api/Lab3.Exemplar.Api.csproj" />
 </Solution>
